@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>gltf三维模型加载</title>
+    <!-- demo样式文件 -->
+    <link rel="stylesheet" href="https://minedata.cn/support/static/api/demo/javascript-3d-api/zh/css/demo.css">
+    <!-- 引入MineMap API插件 -->
+    <link rel="stylesheet" href="https://minedata.cn/minemapapi/v3.2.0/minemap.css">
+    <script src="minemap.js"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    /**
+     * 全局参数设置
+     */
+    minemap.domainUrl = 'https://minedata.cn';
+	minemap.dataDomainUrl = 'https://minedata.cn';
+	minemap.serverDomainUrl = 'https://minedata.cn';
+	minemap.spriteUrl = 'https://minedata.cn/minemapapi/v3.2.0/sprite/sprite';
+	minemap.serviceUrl = 'https://mineservice.minedata.cn/service/';
+
+    minemap.key = '16be596e00c44c86bb1569cb53424dc9';
+    minemap.solution = 12877;
+
+    // 定义空底图样式
+    var style = {
+        "glyphs": "minemap://fonts/{fontstack}/{range}",
+        "sprite": "minemap://sprite/sprite",
+        "sources": {},
+        "layers": [],
+        "version": 8
+    };
+    /**
+     * 初始化地图实例
+     */
+    var map = new minemap.Map({
+        container: 'map',
+        style: style, /*球面矢量底图样式*/
+        center: [116.24607544428136, 40.07400147515279], /*地图中心点*/
+        bearing: 60,
+        zoom: 17.66, /*地图默认缩放等级*/
+        pitch: 60, /*地图俯仰角度*/
+        maxZoom: 30, /*地图最大缩放等级*/
+        minZoom: 1,  /*地图最小缩放等级*/
+        projection: 'MERCATOR'
+    });
+
+    /**
+     * 添加基本球体图层，包括球体表面、天空盒、大气层
+     *
+     */
+    map.on('load', function() {
+        map.addSource('sphere-image-globe', {
+            url: "https://minedata.cn/minemapapi/v3.2.0/assets/earth.jpg",
+            radius: minemap.R,
+            type: 'sphere-image',
+            renderInner: false,
+            gridSamples: 9,
+            debug: false,
+            renderAtmosphere: true
+        });
+        map.addSource('sphere-image-skybox', {
+            url: "https://minedata.cn/minemapapi/v3.2.0/assets/sky13m.jpg",
+            dayTextureUrl: "https://minedata.cn/minemapapi/v3.2.0/assets/back.jpg",
+            radius: 1,
+            type: 'sphere-image',
+            renderInner: true,
+            gridSamples: 9,
+            debug: false,
+        });
+
+        /*添加栅格图*/
+        map.addSource("IMAGERY_SOURCE", {
+            "type": "raster",//数据源类型：栅格数据源
+            // "tiles": ["//mt0.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt1.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt2.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt3.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2"], //瓦片服务地址,
+            // "tiles": ["http://datahive-ni.minedata.cn:10000/service/map/satellite?z={z}&x={x}&y={y}"], //瓦片服务地址
+            "tiles": ["https://smap.minedata.cn/service/map/satellite?z={z}&x={x}&y={y}"], //瓦片服务地址
+            "tileSize": 256,//瓦片尺寸
+        });
+
+        map.addLayer({
+            "id": "IMAGERY",
+            "type": "raster", //图层类型为"raster"
+            "source": "IMAGERY_SOURCE",
+            "minzoom": 1,
+            "maxzoom": 23,
+            // "depth-test": true,
+        });
+
+        /*添加gltf模型数据*/
+        map.addSource("SINGLE_MODEL_SOURCE", {
+            "type": "3d-model", // 数据类型为“3d-model”
+            "data": "plane1.gltf",// 要加载的gltf格式数据
+            "modelFolder": "https://minedata.cn/support/static/api/demo/javascript-3d-api/zh/assets/models/maps/",// 该数据引用图片等资源的文件夹路径
+            "scale": [1, 1, 1],// 在xyz轴方向上的缩放比例
+            "translation": [0, 100, 0],// 在xyz轴方向上的偏移量，单位为m
+            "rotation": [0, 0, 0],// 绕xyz轴方向上的旋转，单位为度
+            "location": [116.24433782743151, 40.07330251849555]// 锚点（模型局部坐标原点）的经纬度位置
+        });
+
+        map.addLayer({
+            "type": "3d-model",//图层类型为"3d-model"
+            "id": "SINGLE_MODEL_LAYER",
+            "source": "SINGLE_MODEL_SOURCE"
+        })
+    })
+</script>
+</body>

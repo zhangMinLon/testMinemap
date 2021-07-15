@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>水淹分析</title>
+    <!-- demo样式文件 -->
+    <link rel="stylesheet" href="demo.css">
+    <!-- 引入MineMap API插件 -->
+    <link rel="stylesheet" href="minemap.css">
+    <script src="minemap.js"></script>
+    <script src="https://minedata.cn/minemapapi/v3.2.0/plugins/modeling/minemap-modeling.js"></script>
+    <script src="https://minedata.cn/minemapapi/v3.2.0/plugins/tool/minemap-tool.js"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    
+       
+
+   
+
+<div id="map"></div>
+<button id="startButton" class="demo-btn" style="margin-right:12px;">水淹</button>
+<script>
+    /**
+     * 全局参数设置
+     */
+    minemap.domainUrl = 'https://minedata.cn';
+	minemap.dataDomainUrl = 'https://minedata.cn';
+	minemap.serverDomainUrl = 'https://minedata.cn';
+	minemap.spriteUrl = 'https://minedata.cn/minemapapi/v3.2.0/sprite/sprite';
+	minemap.serviceUrl = 'https://mineservice.minedata.cn/service/';
+
+    minemap.key = '16be596e00c44c86bb1569cb53424dc9';
+    minemap.solution = 12877;
+
+    // 定义空底图样式
+    var style = {
+        "glyphs": "minemap://fonts/{fontstack}/{range}",
+        "sprite": "minemap://sprite/sprite",
+        "sources": {},
+        "layers": [],
+        "version": 8
+    };
+
+    /**
+     * 初始化地图实例
+     */
+    var map = new minemap.Map({
+        container: 'map',
+        style: style, /*球面矢量底图样式*/
+        center: [119.10697090502003, 29.30472677715945], /*地图中心点*/
+        bearing: -23,
+        zoom: 17.7, /*地图默认缩放等级*/
+        pitch: 60, /*地图俯仰角度*/
+        maxZoom: 30, /*地图最大缩放等级*/
+        minZoom: 1,  /*地图最小缩放等级*/
+        projection: 'MERCATOR'
+    });
+
+    /**
+     * 添加基本球体图层，包括球体表面、天空盒、大气层
+     *
+     */
+    map.on('load', function() {
+        map.addSource('sphere-image-globe', {
+            url: "https://minedata.cn/minemapapi/v3.2.0/assets/earth.jpg",
+            radius: minemap.R,
+            type: 'sphere-image',
+            renderInner: false,
+            gridSamples: 9,
+            debug: false,
+            renderAtmosphere: true
+        });
+        map.addSource('sphere-image-skybox', {
+            url: "https://minedata.cn/minemapapi/v3.2.0/assets/sky13m.jpg",
+            dayTextureUrl: "https://minedata.cn/minemapapi/v3.2.0/assets/back.jpg",
+            radius: 1,
+            type: 'sphere-image',
+            renderInner: true,
+            gridSamples: 9,
+            debug: false,
+        });
+
+        /*添加栅格图*/
+        map.addSource("IMAGERY_SOURCE", {
+            "type": "raster",//数据源类型：栅格数据源
+            // "tiles": ["//mt0.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt1.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt2.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt3.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2"], //瓦片服务地址
+            // "tiles": ["http://datahive-ni.minedata.cn:10000/service/map/satellite?z={z}&x={x}&y={y}"], //瓦片服务地址
+            "tiles": ["https://smap.minedata.cn/service/map/satellite?z={z}&x={x}&y={y}"], //瓦片服务地址
+            "tileSize": 256,//瓦片尺寸
+        });
+
+        map.addLayer({
+            "id": "IMAGERY",
+            "type": "raster", //图层类型为"raster"
+            "source": "IMAGERY_SOURCE",
+            "minzoom": 1,
+            "maxzoom": 23,
+            // "depth-test": true,
+            "paint": {
+                "raster-opacity": 1
+            }
+        });
+
+        /*添加倾斜摄影模型数据*/
+        map.addSource("3D_SOURCE", {
+            "type": "3d-tile",//数据类型为"3d-tile"
+            "url": "//minedata.cn/application/Collada/sphere/datonggltf/m3t.json",//要加载的gltf格式数据
+            "modelFolder": "//minedata.cn/application/Collada/sphere/datonggltf",//该数据引用图片等资源的文件夹路径
+            "scale": [1, 1, 1],//在xyz轴方向上的缩放比例
+            "translation":[1150, -94, 147],//在xyz轴方向上的移动量，单位为m
+            "rotation": [10, 0, 0],//绕xyz轴方向上的旋转，单位为度
+            "location": [119.099448, 29.306793],//锚点（坐标原点）的经纬度位置
+            "noQuery": true
+        });
+        map.addLayer({
+            "type": '3d-tile',//图层类型为"3d-tile"
+            "id": "3d-layer",
+            "source": "3D_SOURCE",
+            "cvtBGR2RGB": true//倾斜摄影模型需要将色彩反转开启
+        })
+
+        /*添加水淹分析*/
+        /*第一步：重复左键点击多次（至少2次）拾取多个多边形坐标
+        * 第二步：右键点击拾取最后一个多边形坐标，生成水淹分析
+        * */
+        var submergenceTool = new minemap.analysisTool.SubmergenceTool(map, "3d_SOURCE","3d_LAYER" );
+        
+        document.getElementById('startButton').onclick = function() {
+            
+            submergenceTool.start({
+                radius:300,
+                min: 0, /*水淹起始高度*/
+                max: 5,/*水淹最大高度*/
+                speed: 0.1,/*水淹速度*/
+                
+                offset: 0,/*淹没体在Y轴正方向上的偏移量*/
+                opacity: 0.7,/*淹没体透明度*/
+                curHeight: 0/*水淹当前高度*/
+                
+            });
+        };
+        // document.getElementById('closeButton').onclick = function() {
+        //     submergenceTool.stop();
+        // };
+        // document.getElementById('updateButton').onclick = function() {
+        //     submergenceTool.update({
+        //         min: 50, /*水淹起始高度*/
+        //         max: 70,/*水淹最大高度*/
+        //         speed: 4,/*水淹速度*/
+        //         offset: 0,/*淹没体在Y轴正方向上的偏移量*/
+        //         opacity: 0.4,/*淹没体透明度*/
+        //     });
+        // };
+        // document.getElementById('resetButton').onclick = function() {
+        //     submergenceTool.remove();
+        // };
+    })
+</script>
+</body>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>计算两点间的距离</title>
+    <link rel="stylesheet" href="https://minedata.cn/support/static/api/demo/javascript-3d-api/zh/css/demo.css">
+    <!-- 引入MineMap API插件 -->
+    <link rel="stylesheet" href="https://minedata.cn/minemapapi/v3.2.0/minemap.css">
+    <script src="https://minedata.cn/minemapapi/v3.2.0/minemap.js"></script>
+    <script src="https://minedata.cn/minemapapi/v3.2.0/plugins/turf/turf.min.js"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="card-panel card-panel-top-right">
+    <div class="card-item">
+        <p>可拖动Marker调整位置，重新计算两点间的距离</p>
+        <p>两点间的距离：<span id="result-text" style="color: red;"></span>米</p>
+    </div>
+</div>
+<div id="map"></div>
+<script>
+    /**
+     * 全局参数设置
+     */
+    minemap.domainUrl = 'https://minedata.cn';
+	minemap.dataDomainUrl = 'https://minedata.cn';
+	minemap.serverDomainUrl = 'https://minedata.cn';
+	minemap.spriteUrl = 'https://minedata.cn/minemapapi/v2.1.0/sprite/sprite';
+	minemap.serviceUrl = 'https://mineservice.minedata.cn/service/';
+
+    minemap.key = '16be596e00c44c86bb1569cb53424dc9';
+    minemap.solution = 12877;
+
+    var map = new minemap.Map({
+        container: 'map',
+        style: 'https://mineservice.minedata.cn/service/solu/style/id/12877',
+        center: [116.46, 39.92],
+        zoom: 12,
+        pitch: 0,
+        maxZoom: 17,
+        minZoom: 3,
+        projection: 'MERCATOR'
+    });
+
+    var marker1, marker2;
+    var coord1 = [116.47, 39.89], coord2 = [116.47, 39.95];
+    var lineData = {
+        "type": "Feature",
+        "geometry": {
+            "type": "LineString",
+            "coordinates": [coord1, coord2]
+        }
+    };
+    var el1, el2;
+
+    /**
+     * 地图加载完成
+     * 创建地图对象后，开始加载地图资源，地图资源加载完成后触发load事件
+     */
+    map.on('load', function () {
+        // 地图资源加载完成后触发
+        // 增加自定义数据源、自定义图层
+        addSources();
+        addLayers();
+
+        el1 = getMarkerElement(1);
+        el2 = getMarkerElement(2);
+        marker1 = new minemap.Marker(el1, {offset: [-20, -20]}).setLngLat(coord1).addTo(map);
+        marker2 = new minemap.Marker(el2, {offset: [-20, -20]}).setLngLat(coord2).addTo(map);
+
+        el1.marker = marker1;
+        el1.selectedId = 1;
+        initMarkerEvent(el1);
+
+        el2.marker = marker2;
+        el2.selectedId = 2;
+        initMarkerEvent(el2);
+
+        calculationResult();
+    });
+
+    function addSources() {
+        map.addSource("lineSource", {
+            "type": "geojson",
+            "data": lineData
+        });
+    }
+
+    function addLayers() {
+        map.addLayer({
+            "id": "lineLayer",
+            "type": "line",
+            "source": "lineSource",
+            "layout": {
+                "line-join": "round",
+                "line-cap": "round"
+            },
+            "paint": {
+                "line-width": 3,
+                "line-color": "#FF8E2B"
+            },
+            "minzoom": 7,
+            "maxzoom": 17.5
+        });
+    }
+
+    function getMarkerElement(id) {
+        var el = document.createElement('div');
+        // 自定义DOM样式 或者通过css类设置
+        el.style["background-image"] = "url(https://minedata.cn/support/static/api/demo/javascript-3d-api/zh/images/ic_step" + id + ".png)";
+        el.style["background-size"] = "cover";
+        el.style.width = "40px";
+        el.style.height = "40px";
+        el.style["border-radius"] = "50%";
+        el.style.cursor = "pointer";
+        return el;
+    }
+
+    //标记鼠标拖拽状态
+    var draggingFlag;
+    //标记鼠标是否在点图层上面
+    var cursorOverPointFlag;
+    var container = map.getCanvasContainer();
+    //选定的marker
+    var selectedMarker = null;
+    var selectedId = 0;
+
+    function mouseMovePoint(e) {
+        if (!draggingFlag) return;
+        container.style.cursor = 'grabbing';
+        selectedMarker.setLngLat(e.lngLat);
+        if (selectedId === 1 || selectedId === 2) {
+            if (selectedId === 1) {
+                coord1 = [e.lngLat.lng, e.lngLat.lat];
+            } else {
+                coord2 = [e.lngLat.lng, e.lngLat.lat];
+            }
+            lineData = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [coord1, coord2]
+                }
+            };
+            map.getSource("lineSource").setData(lineData);
+            calculationResult();
+        }
+    }
+
+    function calculationResult() {
+        var options = {units: 'kilometers'};  //units的参数为kilometers或miles，默认为kilometers
+        var distance = turf.distance(turf.point(coord1), turf.point(coord2), options);
+        document.getElementById('result-text').innerText = (distance * 1000).toFixed(0);
+    }
+
+    function initMarkerEvent(el) {
+        //marker标签监听鼠标是否移入
+        el.onmouseover = function () {
+            cursorOverPointFlag = true;
+            map.dragPan.disable();
+        }
+        //marker标签监听鼠标是否移出
+        el.onmouseout = function () {
+            cursorOverPointFlag = false;
+            map.dragPan.enable();
+        }
+        //marker标签监听鼠标是否点击
+        el.onmousedown = function () {
+            if (!cursorOverPointFlag) return;
+            selectedMarker = this.marker;
+            selectedId = this.selectedId;
+            draggingFlag = true;
+            container.style.cursor = 'grab';
+            map.on('mousemove', mouseMovePoint);
+        }
+        //marker标签监听鼠标是否鼠标按键抬起
+        el.onmouseup = function () {
+            if (!draggingFlag) return;
+            container.style.cursor = '';
+            draggingFlag = false;
+            map.off('mousemove', mouseMovePoint);
+        }
+    }
+
+</script>
+</body>

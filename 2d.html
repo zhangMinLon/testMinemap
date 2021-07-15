@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>二维地图</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="demo.js"></script>
+    <!-- 引入MineMap API插件 -->
+    <link rel="stylesheet" href="minemap.css">
+    <script src="minemap.js"></script>
+    <style>
+        #map {
+            margin: auto;
+            width: 90%;
+            height: 90%;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+<div><p style="text-align:center ;">二维地图加载</p></div>
+<div id="map" ></div>
+<script>
+    /**
+     * 全局参数设置
+     */
+    minemap.domainUrl = 'https://minedata.cn';
+	minemap.dataDomainUrl = 'https://minedata.cn';
+	minemap.serverDomainUrl = 'https://minedata.cn';
+	minemap.spriteUrl = 'https://minedata.cn/minemapapi/v2.1.0/sprite/sprite';
+	minemap.serviceUrl = 'https://mineservice.minedata.cn/service/';
+
+    minemap.key = '16be596e00c44c86bb1569cb53424dc9';
+    minemap.solution = 12877;
+    //可更换为内网，ngnix服务
+    var map = new minemap.Map({
+        container: 'map',
+        style: 'https://mineservice.minedata.cn/service/solu/style/id/12877',
+        center: [120.36,30.02],
+        zoom: 9,
+        pitch: 0,
+        maxZoom: 17,
+        minZoom: 3,
+        projection: 'MERCATOR'
+    });
+
+    /**
+     * 地图加载完成
+     * 创建地图对象后，开始加载地图资源，地图资源加载完成后触发load事件
+     */
+    map.on('load', function () {
+        // 地图资源加载完成后触发
+        // 增加自定义数据源、自定义图层
+        message.success('加载完成！')
+    });
+
+</script>
+</body>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>动态轨迹</title>
+    <!-- demo样式文件 -->
+    <link rel="stylesheet" href="demo.css">
+    <!-- 引入MineMap API插件 -->
+    <link rel="stylesheet" href="minemap.css">
+    <script src="minemap.js"></script>
+    <script src="https://minedata.cn/support/static/api/demo/javascript-3d-api/zh/js/track/track-util.js"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    /**
+     * 全局参数设置
+     */
+    minemap.domainUrl = 'https://minedata.cn';
+	minemap.dataDomainUrl = 'https://minedata.cn';
+	minemap.serverDomainUrl = 'https://minedata.cn';
+	minemap.spriteUrl = 'https://minedata.cn/minemapapi/v3.2.0/sprite/sprite';
+	minemap.serviceUrl = 'https://mineservice.minedata.cn/service/';
+
+    minemap.key = '16be596e00c44c86bb1569cb53424dc9';
+    minemap.solution = 12877;
+    // 定义空底图样式
+    var style = {
+        "glyphs": "minemap://fonts/{fontstack}/{range}",
+        "sprite": "minemap://sprite/sprite",
+        "sources": {},
+        "layers": [],
+        "version": 8
+    };
+    /**
+     * 初始化地图实例
+     */
+    var map = new minemap.Map({
+        container: 'map',
+        style: style, /*球面矢量底图样式*/
+        center: [120.04928421915133, 30.547881643097426], /*地图中心点*/
+        zoom: 19.4, /*地图默认缩放等级*/
+        pitch: 55, /*地图俯仰角度*/
+        bearing: 0,/*地图旋转角度*/
+        maxZoom: 30, /*地图最大缩放等级*/
+        minZoom: 1,  /*地图最小缩放等级*/
+        projection: 'MERCATOR'
+    });
+
+    /**
+     * 添加基本球体图层，包括球体表面、天空盒、大气层
+     *
+     */
+    map.on('load', function() {
+        // map.addSource('sphere-image-globe', {
+        //     url: "https://minedata.cn/minemapapi/v3.2.0/assets/earth.jpg",
+        //     radius: minemap.R,
+        //     type: 'sphere-image',
+        //     renderInner: false,
+        //     gridSamples: 9,
+        //     debug: false,
+        //     renderAtmosphere: true
+        // });
+        // map.addSource('sphere-image-skybox', {
+        //     url: "https://minedata.cn/minemapapi/v3.2.0/assets/sky13m.jpg",
+        //     dayTextureUrl: "https://minedata.cn/minemapapi/v3.2.0/assets/back.jpg",
+        //     radius: 1,
+        //     type: 'sphere-image',
+        //     renderInner: true,
+        //     gridSamples: 9,
+        //     debug: false,
+        // });
+
+        /*添加栅格图*/
+        map.addSource("IMAGERY_SOURCE", {
+            "type": "raster",//数据源类型：栅格数据源
+            // "tiles": ["//mt0.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt1.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt2.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2",
+            // "//mt3.google.cn/maps/vt?lyrs=y&hl=zh-CN&gl=CN&&x={x}&y={y}&z={z}&scale=2"], //瓦片服务地址,
+            // "tiles": ["http://datahive-ni.minedata.cn:10000/service/map/satellite?z={z}&x={x}&y={y}"], //瓦片服务地址
+            "tiles": ["https://smap.minedata.cn/service/map/satellite?z={z}&x={x}&y={y}"], //瓦片服务地址
+            "tileSize": 256,//瓦片尺寸
+        });
+
+        map.addLayer({
+            "id": "IMAGERY",
+            "type": "raster", //图层类型为"raster"
+            "source": "IMAGERY_SOURCE",
+            "minzoom": 1,
+            "maxzoom": 23,
+            // "depth-test": true,
+            "paint": {
+                "raster-opacity": 1
+            }
+        });
+
+    
+        addTrack(map);
+    });
+
+    // 添加动态轨迹
+    function addTrack(map) {
+        var coordsA = [
+            [120.04876725209558, 30.553882576907537,15],
+            [120.04888724910323, 30.553511880163512,15],
+            [120.04894526058501, 30.553310000795037,15],
+            [120.04900325260831, 30.55305792856758,15],
+            [120.04903881853113, 30.552851107478066,15],
+            [120.04909148292427, 30.552477827551023,15],
+            [120.04911638913908, 30.55201512501611,15],
+            [120.04917074059392, 30.549155479692555,15],
+            [120.04915082923563, 30.548870199824577,15],
+            [120.04916506776055, 30.548131419516903,15],
+            [120.04916506778065, 30.54813141938617,15],
+            [120.04916307110035, 30.548101665514267,15],
+            [120.04915910091272, 30.548073951776967,15],
+            [120.0491533311321, 30.548046790804168,15],
+            [120.04914036306024, 30.548030063421868,15],
+            [120.04912915718457, 30.548001329288063,15],
+            [120.04909787283983, 30.547983480003013,15],
+            [120.04907314978192, 30.547968632078444,15],
+            [120.04904328313051, 30.54795943582151,15],
+            [120.04901380993024, 30.54795276935719,5],
+            [120.04901356945753, 30.54795272025932,10],
+            [120.0487151080992, 30.54788272633091,20]
+        ];
+
+        
+        var coordsB = [
+            
+            [120.04879971018748, 30.553889365983924],
+            [120.04893058970301, 30.5534877233605],
+            [120.04902069490156, 30.55314964494892],
+            [120.04907816644938, 30.552823963534294],
+            [120.04912794591363, 30.5524663013355],
+            [120.04920349793703, 30.549306303607853],
+            [120.04930308882684, 30.548164700278303]
+        ];
+
+        var coordsC = [
+            [[120.04894526058501, 30.553310000795037,15],
+            [120.04900325260831, 30.55305792856758,15],
+            [120.04903881853113, 30.552851107478066,15],
+            [120.04909148292427, 30.552477827551023,15],
+            [120.04911638913908, 30.55201512501611,15]],
+            [[120.04909787283983, 30.547983480003013],
+            [120.04907314978192, 30.547968632078444],
+            [120.04904328313051, 30.54795943582151],
+            [120.04901380993024, 30.54795276935719],
+            [120.04901356945753, 30.54795272025932],
+            [120.0487151080992, 30.54788272633091],
+            [120.04930308893076, 30.548164689584205],
+            [120.04924088517348, 30.54737819792502]]
+        ];
+
+        // 1. 录入轨迹信息
+        // 创建轨迹处理工具
+        var util = new minemap.TrackUtil();
+        /*
+         * 添加轨迹参数，分为两种情况：
+         *
+         * 1. 不添加停顿（标准轨迹，type = 0）
+         * util.parse(type, data, seqStart, speed, modelName, offset)
+         * 其中：
+         * type: 轨迹类型（默认0）
+         * data: 路线坐标（[[lng0, lat0, height0], [lng1, lat1, height1]......]）
+         * seqStart: 起始时间点（默认0s）
+         * speed: 速度（默认1m/s）
+         * modelName: gltf文件内的模型Node名称
+         * offset: 向后偏移（默认0m）
+         * 例如：
+         * util.parse(0, [[120.044179033197707, 30.551075194807975], [120.044187564488169, 30.550674300179729]], 1, 15, 'car')
+         *
+         * 2. 添加停顿（模拟路口，type = 1）
+         * util.parse(type, data, seqStart, speed, modelName, offset, stopUntil)
+         * 其中：
+         * type: 轨迹类型（默认0）
+         * data: 路线坐标数组，由暂停前后两段坐标组成（[[[lngA0, latA0, heightA0], [lngA1, latA1, heightA1]......], [[lngB0, latB0, heightB0], [lngB1, latB1, heightB1]......]]）
+         * seqStart: 起始时间点（默认0s）
+         * speed: 速度（默认1m/s）
+         * modelName: gltf文件内的模型Node名称
+         * offset: 向后偏移（默认0m）
+         * stopUntil: 轨迹跑完第一段后停止，直到stopUntil时间点开始第二段轨迹。
+         * 例如：
+         * util.parse(0, [
+         *     [
+         *         [120.044134433636629, 30.554532130673735, 3],
+         *         [120.044178197810155, 30.551956405506708, 2],
+         *         [120.04416700232386, 30.551679062779048, 1],
+         *         [120.044179033197693, 30.551075194807979, 0]
+         *     ], [
+         *         [120.044179033197707, 30.551075194807975],
+         *         [120.044187564488169, 30.550674300179729]
+         *     ]
+         * ], 1, 15, 'car', 0, 45)
+         * 依次逐条添加轨迹，完成数据录入。
+         */
+        util.parse(0, coordsA, 0, 40, 'car1', 20);
+        util.parse(0, coordsB, 0, 60, 'car2', 0);
+        util.parse(1, coordsC, 1, 50, 'car3', 0, 20);
+
+        /*
+         * 2. 合并gltf模型文件
+         * 一个轨迹图层往往由多条车辆轨迹组成，不同轨迹往往对应着不同模型，TrachUtil工具提供gltf文件合并功能，可以将多个gltf文件合并为一个gltf，供引擎使用。
+         */
+
+        // 2.1 加载gltf
+        var car1 = new Promise(function (resolve, reject) {
+            minemap.util.getJSON({
+                url: 'car1.gltf'
+            }, (error, data) => {
+                if (error) {
+                    console.error(new Error('car1.gltf' + ' load error!'));
+                    resolve(null);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+
+        var car2 = new Promise(function (resolve, reject) {
+            minemap.util.getJSON({
+                url: 'car2.gltf'
+            }, (error, data) => {
+                if (error) {
+                    console.error(new Error('car2.gltf' + ' load error!'));
+                    resolve(null);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+
+        var car3 = new Promise(function (resolve, reject) {
+            minemap.util.getJSON({
+                url: 'car3.gltf'
+            }, (error, data) => {
+                if (error) {
+                    console.error(new Error('car3.gltf' + ' load error!'));
+                    resolve(null);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+        alert(1)
+        Promise.all([car1,car2,car3])
+            .then(function (objects) {
+                var gltf = util.conbineGltfs(objects);
+                var trackData = util.getTrack();
+
+                // 3. 添加source和layer
+                map.addSource('tracking', {
+                    type: '3d-model',
+                    data: gltf,
+                    modelFolder: 'https://minedata.cn/support/static/api/demo/javascript-3d-api/zh/assets/models/',
+                    scale: [1, 1, -1],
+                    configuration: {
+                        renderType: 'track',
+                        // 速度系数（动画时间是实际时间的倍数，例如2代表时间时间过去1秒，动画时间过去2秒）
+                        speedFactor: 1,
+                        // 动画时间长度
+                        segmentCount: 70,
+                        // 使用模型在gltf文件内的模型Node名称集合
+                        modelNames: ['car1','car2','car3'],
+                        // 轨迹数据
+                        trackData: trackData,
+                        
+                    },
+                });
+
+                map.addLayer({
+                    type: '3d-model',
+                    id: 'tracking',
+                    source: 'tracking',
+                });
+
+                // map动态开关
+                map.repaint = true;
+                // map计时器开关
+                map.timer.state = true;
+            });
+    }
+</script>
+</body>
